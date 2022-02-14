@@ -30,12 +30,19 @@ class CPU:
 
 
     # OPCodes
-    INS_JSR     = 0x20
-    INS_RTS     = 0x60
-    INS_LDA_IM  = 0xA9
-    INS_LDA_ZP  = 0xA5
-    INS_LDA_ZPX = 0xB5
-    INS_JMP_ABS = 0x4C
+    # Load and Store
+    INS_LDA_IM   = 0xA9
+    INS_LDA_ZP   = 0xA5
+    INS_LDA_ZPX  = 0xB5
+    INS_LDA_ABS  = 0xAD
+    INS_LDA_ABSX = 0xBD
+    INS_LDA_ABSY = 0xB9
+    INS_LDA_INDX = 0xA1
+    INS_LDA_INDY = 0xB1
+    # Jumps and Calls
+    INS_JMP_ABS  = 0x4C
+    INS_JSR      = 0x20
+    INS_RTS      = 0x60  
 
 
     def fetchByte(self, memory):
@@ -116,7 +123,7 @@ class CPU:
     def setFlagsLDA(self):
         if (self.A == 0):
             self.Z = True
-        if ((self.A & 1000000) > 0):
+        if ((self.A & 0x80) > 0):
             self.N = True
 
 
@@ -128,7 +135,7 @@ class CPU:
                 value = \
                     self.fetchByte(memory)
                 self.A = value
-                self.setFlagsLDA
+                self.setFlagsLDA()
 
             if (instruction == self.INS_LDA_ZP):
                 zeroPageAddress = \
@@ -136,7 +143,7 @@ class CPU:
                 value = \
                     self.readByte(memory, zeroPageAddress)
                 self.A = value
-                self.setFlagsLDA
+                self.setFlagsLDA()
 
             if (instruction == self.INS_LDA_ZPX):
                 zeroPageAddress = \
@@ -146,7 +153,43 @@ class CPU:
                 value = \
                     self.readByte(memory, zeroPageAddress)
                 self.A = value
-                self.setFlagsLDA
+                self.setFlagsLDA()
+
+            if (instruction == self.INS_LDA_ABS):
+                address = \
+                    self.fetchWord(memory)
+                value = \
+                    self.readByte(memory, address)
+                self.A = value
+                self.setFlagsLDA()
+
+            if (instruction == self.INS_LDA_ABSX):
+                address = \
+                    self.fetchWord(memory)
+                address += self.X
+                if (address > 0xFF):
+                    self.Cycle += 1
+                else:
+                    # Crossing the page
+                    self.Cycle += 2
+                value = \
+                    self.readByte(memory, address)
+                self.A = value
+                self.setFlagsLDA()
+
+            if (instruction == self.INS_LDA_ABSY):
+                address = \
+                    self.fetchByte(memory)
+                address += self.Y
+                if (address > 0xFF):
+                    self.Cycle += 1
+                else:
+                    # Crossing the page
+                    self.Cycle += 2
+                value = \
+                    self.readByte(memory, address)
+                self.A = value
+                self.setFlagsLDA()
 
             if (instruction == self.INS_JMP_ABS):
                 subRoutineAddress = \
